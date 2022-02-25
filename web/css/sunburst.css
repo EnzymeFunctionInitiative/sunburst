@@ -1,0 +1,28 @@
+.cluster-size-sm {
+    font-size: 0.9em;
+}
+.cluster-size {
+    text-transform: uppercase;
+}
+.float-right {
+    float: right !important;
+}
+
+.form-check-inline {
+    display: inline-flex;
+    align-items: center;
+    padding-left: 0;
+    margin-right: 0.75rem;
+}
+.form-check {
+    position: relative;
+}
+
+.sunburst-level {
+/*    text-shadow: 1px 1px 10px white, 1px 1px 10px white,1px 1px 10px white,1px 1px 10px white, 1px 1px 10px white;*/
+    color: black;
+    padding: 3px 15px;
+    margin-bottom: 1px;
+    width: 100px;
+}
+

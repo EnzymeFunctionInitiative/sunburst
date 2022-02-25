@@ -1,0 +1,24 @@
+{
+    "name": "efiillinois/sunburst",
+    "description": "Sunburst library with JS and PHP code.",
+    "keywords": ["template", "composer", "package"],
+    "license": "GPL-3.0-only",
+    "homepage": "https://www.github.com/EnzymeFunctionInitiative/sunburst",
+    "authors": [
+        {
+            "name": "Nils Oberg",
+            "email": "noberg@illinois.edu"
+        }
+    ],
+    "type": "project",
+    "require": {
+        "php": ">=7.1",
+        "components/jquery": ">=3.4.1",
+        "components/jqueryui": ">=1.12.1"
+    },
+    "autoload": {
+        "classmap": [
+            "libs"
+        ]
+    }
+}
