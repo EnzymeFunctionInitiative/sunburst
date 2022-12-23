@@ -3,13 +3,17 @@
 // SUNBURST
 //
 
-function AppSunburst(apiId, apiKey, apiExtra, appUnirefVersion, scriptAppDir, hasUniref = false) {
-    this.apiId = apiId;
-    this.apiKey = apiKey;
-    this.apiExtra = apiExtra;
-    this.appUnirefVersion = appUnirefVersion;
-    this.hasUniref = hasUniref;
-    this.scriptAppDir = scriptAppDir;
+//function AppSunburst(apiId, apiKey, apiExtra, appUniRefVersion, scriptApp, hasUniRef = false) {
+function AppSunburst(params) {
+    this.apiId = params.apiId;
+    this.apiKey = params.apiKey;
+    this.apiExtra = params.apiExtra;
+    this.appUniRefVersion = params.appUniRefVersion;
+    this.appPrimaryIdTypeText = typeof params.appPrimaryIdTypeText !== "undefined" ? params.appPrimaryIdTypeText : "";
+    this.appPostSunburstTextFn = typeof params.appPostSunburstTextFn !== "undefined" ? params.appPostSunburstTextFn : "";
+    this.hasUniRef = params.hasUniRef;
+    this.scriptApp = params.scriptApp;
+    this.fastaApp = params.fastaApp;
 }
 
 
@@ -34,18 +38,18 @@ AppSunburst.prototype.addSunburstFeatureAsync = function(onFinishedFn) {
     }
     $.ajax({
         dataType: "json",
-        url: that.scriptAppDir + "/get_tax_data.php",
+        url: that.scriptApp,
         data: parms,
         success: function(jsonData) {
             if (typeof(jsonData.valid) !== "undefined" && jsonData.valid == "false") {
                 //TODO: handle error
                 alert(jsonData.message);
                 progress.stop();
-                if (typeof onFinishedFn === "function")
-                    onFinishedFn();
             } else {
                 that.addSunburstFeature(jsonData.data.data);
                 progress.stop();
+                if (typeof onFinishedFn === "function")
+                    onFinishedFn(that);
             }
         },
         error: function(jsonData, exception) {
@@ -58,29 +62,11 @@ AppSunburst.prototype.addSunburstFeatureAsync = function(onFinishedFn) {
 
 AppSunburst.prototype.addSunburstFeature = function(treeData) {
 
-    var idTypeStr = this.appUnirefVersion ? "UniRef"+this.appUnirefVersion : "UniProt";
+    var idTypeStr = this.appUniRefVersion ? "UniRef"+this.appUniRefVersion : this.appPrimaryIdTypeText;
     var that = this;
     var Colors = getSunburstColorFn(); // from sunburst_helpers.js
 
     addParentRef(treeData, null);
-
-    var addCurViewNumSeq = function() {
-        if (!that.sbCurrentData)
-            return;
-        var numUniprot = 0;
-        var idStr = that.sbCurrentData.nq > 1 ? "IDs" : "ID";
-        if (that.hasUniref) {
-            var numIds = computeVisibleIds(that.sbCurrentData);
-            numUniprot = commify(numIds.uniprot);
-            numUniref90 = commify(numIds.uniref90);
-            numUniref50 = commify(numIds.uniref50);
-            theText = numUniprot + " UniProt, " + numUniref90 + " UniRef90, " + numUniref50 + " UniRef50 visible IDs";
-        } else {
-            numUniprot = commify(that.sbCurrentData.nq); // nq = numSequences
-            theText = numUniprot + " " + idTypeStr + " " + idStr + " visible";
-        }
-        $("#sunburst-id-nums").text(theText);
-    };
 
     var maxDepth = 9;
     var depthMap = {
@@ -95,6 +81,28 @@ AppSunburst.prototype.addSunburstFeature = function(treeData) {
         8 : [                                                                                                   "Species" ], 
     };
     var levelsColorFn = getColorForSunburstLevelFn();
+
+    var addCurViewNumSeq = function() {
+        if (!that.sbCurrentData)
+            return;
+        var numUniprot = 0;
+        var idStr = that.sbCurrentData.nq > 1 ? "IDs" : "ID";
+        if (that.hasUniRef) {
+            var numIds = computeVisibleIds(that.sbCurrentData);
+            numUniprot = commify(numIds.uniprot);
+            numUniRef90 = commify(numIds.uniref90);
+            numUniRef50 = commify(numIds.uniref50);
+            theText = numUniprot + " UniProt, " + numUniRef90 + " UniRef90, " + numUniRef50 + " UniRef50 IDs";
+        } else {
+            numUniprot = commify(that.sbCurrentData.nq); // nq = numSequences
+            theText = numUniprot + " " + idTypeStr + " " + idStr + "";
+        }
+        $("#sunburst-id-nums").text(theText);
+        var rankText = "";
+        if (that.sbCurrentData.d > 0)
+            rankText = depthMap[that.sbCurrentData.d][0] + ": " + that.sbCurrentData.node;
+        $("#sunburst-rank").text(rankText);
+    };
 
     var showTaxLevels = function(data) {
         $("#sunburst-chart-levels").empty();
@@ -145,15 +153,20 @@ AppSunburst.prototype.addSunburstFeature = function(treeData) {
     };
 
 
-    if (this.appUnirefVersion === 90) {
+    if (this.appUniRefVersion === 90) {
         $("#sunburst-id-type-uniref90-container").show();
     }
-    if (this.appUnirefVersion === 50 || this.hasUniref) {
+    if (this.appUniRefVersion === 50 || this.hasUniRef) {
         $("#sunburst-id-type-uniref50-container").show();
         $("#sunburst-id-type-uniref90-container").show();
     }
-    if (this.appUnirefVersion !== false || this.hasUniref) {
+    if (this.appUniRefVersion !== 0 || this.hasUniRef) {
         $("#sunburst-type-download-container").show();
+    }
+
+    if (typeof this.appPostSunburstTextFn !== "undefined") {
+        $("#sunburst-download-text").append(this.appPostSunburstTextFn());
+        $("#sunburst-download-text-container").show();
     }
 
     $("#sunburst-download-ids").click(function() {
@@ -200,7 +213,20 @@ function fixNodeName(str) {
 function getIdType() {
     return $("input[name='sunburstIdType']:checked").val();
 }
+AppSunburst.prototype.getIdType = function() {
+    return getIdType();
+};
 
+
+AppSunburst.prototype.getCurrentNode = function() {
+    var node = this.sbCurrentData;
+    var nodeInfo = {
+        id: node.id,
+        name: node.node,
+        idType: this.getIdType(),
+    };
+    return nodeInfo;
+};
 
 function setupSvgDownload() {
     var svg = $("#sunburst-chart svg")[0];
@@ -229,7 +255,7 @@ AppSunburst.prototype.sunburstDownloadFasta = function() {
     var fixedNodeName = fixNodeName(that.sbCurrentData.node)
     var jsIds = JSON.stringify(ids);
 
-    var form = $('<form method="POST" action="' + that.scriptAppDir + '/get_sunburst_fasta.php"></form>');
+    var form = $('<form method="POST" action="' + that.fastaApp + '"></form>');
     form.append($('<input name="id" type="hidden">').val(that.apiId));
     form.append($('<input name="key" type="hidden">').val(that.apiKey));
     form.append($('<input name="o" type="hidden">').val(fixedNodeName));
@@ -273,7 +299,7 @@ AppSunburst.prototype.sunburstDownloadFasta = function() {
     //        window.URL.revokeObjectUrl(url);
     //    }
     //};
-    //ajax.open("POST", that.scriptAppDir + "/get_sunburst_fasta.php");
+    //ajax.open("POST", that.scriptApp + "/get_sunburst_fasta.php");
     //ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     //ajax.responseType = "text";
     //ajax.send(JSON.stringify(parms));
@@ -287,7 +313,7 @@ AppSunburst.prototype.sunburstDownloadFasta = function() {
     //$.ajax({
     //    type: "POST",
     //    dataType: "json",
-    //    url: that.scriptAppDir + "/get_sunburst_fasta.php",
+    //    url: that.scriptApp + "/get_sunburst_fasta.php",
     //    data: parms,
     //    success: function(data) {
     //        //progress.stop();
@@ -495,15 +521,19 @@ AppSunburst.prototype.addSunburstContainer = function() {
                             </div>
                         </div>
                         <div>
+                            <div id="sunburst-rank" class="cluster-size cluster-size-sm">
+                            </div>
                             <div id="sunburst-id-nums" class="cluster-size cluster-size-sm">
                             </div>
                             <div style="clear: both">
-                                Click on a region to zoom into that part of the taxonomic hierarchy.  Clicking on the
-                                center circle will zoom out to the next highest level.
                             </div>
                         </div>
                         <div class="modal-footer">
                             <div class="mr-auto">
+                                <div id="sunburst-download-text-container" style="display: none">
+                                    <hr class="light">
+                                    <div id="sunburst-download-text"></div>
+                                </div>
                                 <hr class="light">
                                 <div class="p-2" id="sunburst-type-download-container" style="display: none">
                                     ID type: 
@@ -520,7 +550,7 @@ AppSunburst.prototype.addSunburstContainer = function() {
                                         <label class="form-check-label" for="sunburst-id-type-uniref50">UniRef50</label>
                                     </div>
                                 </div>
-                                <div>
+                                <div id="sunburst-id-action-container">
                                     <button type="button" class="normal btn btn-default btn-secondary" data-toggle="tooltip" title="Download the UniProt IDs that are visible in the sunburst diagram" id="sunburst-download-ids">Prepare ID Download</button>
                                     <button type="button" class="normal btn btn-default btn-secondary mr-auto" data-toggle="tooltip" title="Download the FASTA sequences that are visible in the sunburst diagram" id="sunburst-download-fasta">Prepare FASTA Download</button>
                                     <!--<button type="button" class="btn btn-default mr-auto" data-toggle="tooltip" title="Download a SVG file of the sunburst diagram" id="sunburst-svg">Download SVG</button>-->
@@ -529,6 +559,17 @@ AppSunburst.prototype.addSunburstContainer = function() {
                         </div>
     `;
     this.container.append(block);
+};
+
+
+AppSunburst.prototype.addTransferAction = function(id, text, title, action) {
+    if (typeof this.sbCurrentData.id === "undefined") {
+        return;
+    }
+
+    var btn = $('<button type="button" class="normal btn btn-default btn-secondary mr-auto" data-toggle="tooltip" title="' + title + '" id="' + id + '">' + text + '</button>');
+    btn.click(action);
+    $("#sunburst-id-action-container").append(btn);
 };
 
 
