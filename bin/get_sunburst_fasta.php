@@ -33,10 +33,6 @@ $blast_db = get_blast_db_path($db, $id);
 $blast_module = __BLAST_MODULE__;
 
 
-$exec = "source /etc/profile\n";
-$exec .= "module load $blast_module\n";
-
-
 $output = "";
 
 $num_ids = count($ids);
@@ -53,7 +49,7 @@ for ($i = 0; $i < $num_ids; $i += $batch_size) {
             $id_list .= ",";
         $id_list .= $the_id;
     }
-    $blast_exec  = $exec . "fastacmd -d $blast_db -s $id_list\n";
+    $blast_exec  = $blast_module . " -d $blast_db -s $id_list\n";
 
     $exit_status = 1;
     $output_array = array();
