@@ -1,28 +1,14 @@
 <?php
+//TODO: set this
+$init_dir = __DIR__."/../../../../..";
+require_once("$init_dir/init.php");
 
 
+use \efi\send_file;
+use \efi\est\stepa;
+use \efi\est\functions;
 
-function get_job_key($db, $id) {
-    //TODO: implement this
-    return "";
-}
 
-function get_results_dir($db, $id) {
-    //TODO: implement this
-    return "";
-}
-
-function send_output($filename, $output) {
-    //TODO: implement this.  Something like:
-    $filesize = strlen($output);
-    //send_headers($filename, $filesize)
-    echo $output;
-    ob_flush();
-    flush();
-}
-
-/*
-EXAMPLES:
 
 function get_job_key($db, $id) {
     $job = get_job($db, $id);
@@ -42,11 +28,7 @@ function get_results_dir($db, $id) {
 }
 
 function send_output($filename, $output) {
-    $filesize = strlen($output);
-    global_functions::send_headers($filename, $filesize);
-    echo $output;
-    ob_flush();
-    flush();
+    send_file::send_text($output, $filename, send_file::SEND_FILE_BINARY);
 }
-*/
+
 
