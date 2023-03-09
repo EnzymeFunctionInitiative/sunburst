@@ -33,7 +33,6 @@ $blast_db = get_blast_db_path($db, $id);
 $blast_module = __BLAST_MODULE__;
 
 
-
 $output = "";
 
 $num_ids = count($ids);
@@ -63,7 +62,6 @@ for ($i = 0; $i < $num_ids; $i += $batch_size) {
         $output .= $line . "\n";
     }
 }
-
 
 
 $node_name = preg_replace("/[^A-Za-z0-9\-_]/", "", $node_name);
