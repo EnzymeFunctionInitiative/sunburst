@@ -3,17 +3,20 @@
 // SUNBURST
 //
 
+
+
 //function AppSunburst(apiId, apiKey, apiExtra, appUniRefVersion, scriptApp, hasUniRef = false) {
 function AppSunburst(params) {
-    this.apiId = params.apiId;
-    this.apiKey = params.apiKey;
-    this.apiExtra = params.apiExtra;
-    this.appUniRefVersion = params.appUniRefVersion;
-    this.appPrimaryIdTypeText = typeof params.appPrimaryIdTypeText !== "undefined" ? params.appPrimaryIdTypeText : "";
-    this.appPostSunburstTextFn = typeof params.appPostSunburstTextFn !== "undefined" ? params.appPostSunburstTextFn : "";
-    this.hasUniRef = params.hasUniRef;
-    this.scriptApp = params.scriptApp;
-    this.fastaApp = params.fastaApp;
+    // Used for 
+    this.apiId                 =    typeof params.apiId !== "undefined"                 ? params.apiId : 0;
+    this.apiKey                =    typeof params.apiKey !== "undefined"                ? params.apiKey : "";
+    this.apiExtra              =    typeof params.apiExtra === "object"                 ? params.apiExtra : [];
+    this.appUniRefVersion      =    typeof params.appUniRefVersion !== "undefined"      ? params.appUniRefVersion : "";
+    this.appPrimaryIdTypeText  =    typeof params.appPrimaryIdTypeText !== "undefined"  ? params.appPrimaryIdTypeText : "";
+    this.appPostSunburstTextFn =    typeof params.appPostSunburstTextFn === "function"  ? params.appPostSunburstTextFn : null;
+    this.hasUniRef             =    typeof params.hasUniRef === "boolean"               ? params.hasUniRef : false;
+    this.scriptApp             =    typeof params.scriptApp === "string"                ? params.scriptApp : "";
+    this.fastaApp              =    typeof params.fastaApp === "string"                 ? params.fastaApp : "";
 }
 
 
@@ -164,7 +167,7 @@ AppSunburst.prototype.addSunburstFeature = function(treeData) {
         $("#sunburst-type-download-container").show();
     }
 
-    if (typeof this.appPostSunburstTextFn !== "undefined") {
+    if (this.appPostSunburstTextFn !== null) {
         $("#sunburst-download-text").append(this.appPostSunburstTextFn());
         $("#sunburst-download-text-container").show();
     }
@@ -275,50 +278,6 @@ AppSunburst.prototype.sunburstDownloadFasta = function() {
         //progress.stop();
     }, 1000);
 
-    //var parms = {
-    //    id: that.apiId,
-    //    key: that.apiKey,
-    //    o: fixedNodeName,
-    //    ids: jsIds,
-    //    it: idType,
-    //    type: "jquery"
-    //};
-
-    // html5 type
-    //var ajax = new XMLHttpRequest();
-    //ajax.onreadystatechange = function() {
-    //    if (ajax.readyState === 4 && ajax.status === 200) {
-    //        var dummy = document.createElement("a");
-    //        var json = JSON.decode(ajax.response);
-    //        var blob = base64ToBlob(.data, ajax.response.download.mimetype);
-    //        var url = window.URL.createObjectUrl(blob);
-    //        dummy.href = url;
-    //        dummy.download = ajax.response.download.filename;
-    //        dummy.style.display = "none";
-    //        dummy.click();
-    //        window.URL.revokeObjectUrl(url);
-    //    }
-    //};
-    //ajax.open("POST", that.scriptApp + "/get_sunburst_fasta.php");
-    //ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    //ajax.responseType = "text";
-    //ajax.send(JSON.stringify(parms));
-    //ajax.addEventListener("readystatechange", function() {
-    //    if (ajax.readyState === XMLHttpRequest.DONE) {
-    //        progress.stop();
-    //    }
-    //});
-
-    // ajax type
-    //$.ajax({
-    //    type: "POST",
-    //    dataType: "json",
-    //    url: that.scriptApp + "/get_sunburst_fasta.php",
-    //    data: parms,
-    //    success: function(data) {
-    //        //progress.stop();
-    //    }
-    //});
 };
 
 
@@ -373,31 +332,6 @@ function getIdsFromTree(data, idType = "") {
     }
     return ids;
 }
-//function getIdsFromTree(data, idType) {
-//    var nextLevel = function(level) {
-//        var ids = {uniprot: [], uniref90: [], uniref50: []};
-//        // Bottom level
-//        if (typeof level.seq !== "undefined") {
-//            for (var i = 0; i < level.seq.length; i++) {
-//                var id = idType == "uniref50" ? level.seq[i].sa50 : (idType == "uniref90" ? level.seq[i].sa90 : level.seq[i].sa); //sa = seqAcc
-//                //ids.push(level.seq[i].sa);
-//                ids.push(id);
-//            }
-//        } else {
-//            for (var i = 0; i < level.children.length; i++) {
-//                var nextIds = nextLevel(level.children[i]);
-//                for (var j = 0; j < nextIds.length; j++) {
-//                    ids.push(nextIds[j]);
-//                }
-//            }
-//        }
-//        return ids;
-//    };
-//
-//    var ids = nextLevel(data);
-//    ids = Array.from(new Set(ids)); // Make unique
-//    return ids;
-//}
 
 function triggerDownload (imgURI) {
   var evt = new MouseEvent('click', {

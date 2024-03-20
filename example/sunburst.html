@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Example</title>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="../web/js/sunburst-chart.min.js"></script>
+        <script src="../web/js/sunburst-helpers.js" type="text/javascript"></script>
+        <script src="../web/js/sunburst-taxonomy2.js" type="text/javascript"></script>
+        <script src="../web/js/progress.js" type="text/javascript"></script>
+        <script src="data.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="../web/css/sunburst.css">
+    </head>
+    <body>
+        <div id="sunburst"  style="position: relative">
+        </div>
+
+        <script>
+            $(document).ready(function() {
+                 // Called after the data has been transferred and the output rendered
+                 var onComplete = function() {};
+
+                 // This is the same directory that files are copied into during the `post-update-cmd` step
+                 var sbParams = {
+                     hasUniRef: false,
+                 };
+
+                 var sunburstApp = new AppSunburst(sbParams);
+                 // A container div
+                 sunburstApp.attachToContainer("sunburst");
+                 sunburstApp.addSunburstFeature(DATA.data);
+            });
+        </script>
+    </body>
+</html>
+

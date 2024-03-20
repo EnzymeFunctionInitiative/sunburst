@@ -1,37 +1,69 @@
-# sunburst
+# EFI Sunburst for Displaying Taxonomic Hierarchy in SSNs
 
-# Installation
+This project provides code for displaying a taxonomic hierarchy in a sunburst fasion.  It uses the
+`sunburst-chart` library that is available at `https://github.com/vasturiano/sunburst-chart`.
 
-composer update
+## Installation
 
-wherever the js and css code is used look at html/vendor/efillionis/sunburst/web/(js|css)
+PHP's composer dependency manager is used as the installation tool.  Add the following to the `require`
+block:
 
-wherever the php code is needed, copy vendor/efiillinois/sunburst/web/bin/get_tax_data.php.example to local app dir and
-modify it as necessary.  usually doesn't need modification, if used in the EFI web tools.
+    "efiillinois/sunburst": "main-dev"
 
-copy vendor/efiillinois/sunburst/php/get_sunburst_fasta.php.conf.example to
-vendor/efiillinois/sunburst/php/get_sunburst_fasta.php.conf and modify it as necessary.
+Add the following in the `repositories` section:
 
-copy vendor/efiillinois/sunburst/php/get_sunburst_fasta.inc.php.example to
-vendor/efiillinois/sunburst/php/get_sunburst_fasta.inc.php and modify it as necessary.
+    {
+        "type": "vcs",
+        "url": "https://github.com/EnzymeFunctionInitiative/sunburst.git"
+    }
 
-when using get_sunburst_fasta.php, use vendor/efiillinois/sunburst/php/get_sunburst_fasta.php, which should include
-the previously-mentioned conf and inc files.
+In the `scripts` section, add a `post-update-cmd` section and include the following commands
+(these are necessary to copy the files that are installed in the `vendor` directory into a
+directory accessible by the web server):
 
-when using the js code, appDir should be where the get_sunburst_fasta.php is, e.g. vendor/efiillinois/sunburst/php
+    "scripts": {
+        "post-update-cmd": [
+            "mkdir -p html/vendor/efiillinois/sunburst/php",
+            "mkdir -p html/vendor/efiillinois/sunburst/web",
+            "cp -R vendor/efiillinois/sunburst/php/* html/vendor/efiillinois/sunburst/php",
+            "cp -R vendor/efiillinois/sunburst/web/* html/vendor/efiillinois/sunburst/web",
+            "cp -R vendor-post/efiillinois/sunburst/php/* html/vendor/efiillinois/sunburst/php"
+        ]
+    }
 
-# Example setup
+Finally, install with `composer`:
 
-vendor/efiillinois/sunburst/php/get_sunburst_fasta.php (use as-is)
-
-vendor/efiillinois/sunburst/php/get_sunburst_fasta.inc.php
-
-vendor/efiillinois/sunburst/php/get_sunburst_fasta.php.conf
+    composer update
 
 
-js
+## Configuration
 
-ascore = []; // Optional
-new AppSunburst(jobId, jobKey, ascore, unirefVersion, "/dev/vendor/efiillinois/sunburst/php");
+`composer` will install files into the `vendor` directory, as well as `html/vendor/efiillinois.sunburst/php`.
+In order to make the PHP backend work, the `config.php.example` file must be copied
+to `config.php` and edited.  Enable the app-specific back-end by commenting/uncommenting the 
+
+
+## Usage
+
+There must be a `div` that will contain the rendered sunburst output.
+
+The JavaScript application should be initialized in the jQuery `$(document).ready(function() {})`
+function. As an example:
+
+    // Called after the data has been transferred and the output rendered
+    var onComplete = function() {};
+
+    // This is the same directory that files are copied into during the `post-update-cmd` step
+    var scriptAppDir = "/vendor/efiillinois/sunburst/php";
+    var sbParams = {
+            scriptApp: scriptAppDir + "/get_tax_data.php",
+            fastaApp: scriptAppDir + "/get_sunburst_fasta.php",
+            hasUniRef: false,
+    };
+
+    var sunburstApp = new AppSunburst(sbParams);
+    // A container div
+    sunburstApp.attachToContainer("taxonomy");
+    sunburstApp.addSunburstFeatureAsync(onComplete);
 
 

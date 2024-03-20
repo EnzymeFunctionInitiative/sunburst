@@ -1,7 +1,0 @@
-<?php
-
-// Set $db variable that points to an instance of PDO
-
-define("__BLAST_MODULE__","");
-define("__BLAST_DB_NAME__","database");
-

@@ -1,0 +1,13 @@
+<?php
+
+define("__BLAST_MODULE__","");
+define("__BLAST_DB_NAME__","database");
+define("__SEQ_BATCH_SIZE__",1000);
+
+define("__EFI_INTEGRATION__",true);
+//define("__SUPERFAMILY_INTEGRATION__",true);
+
+define("__INIT_FILE__",__DIR__."/../../../../../init.php");
+
+require_once(__INIT_FILE__);
+
