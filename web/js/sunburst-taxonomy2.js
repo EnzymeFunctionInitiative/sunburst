@@ -427,6 +427,7 @@ AppSunburst.prototype.attachToContainer = function(containerId) {
     this.addSunburstDownloadWarning();
     this.addSunburstContainer();
     this.addSunburstDownloadDialogs();
+    this.enableImageDownloadLinks();
 };
 
 
@@ -487,7 +488,8 @@ AppSunburst.prototype.addSunburstContainer = function() {
                                 <div id="sunburst-id-action-container">
                                     <button type="button" class="normal btn btn-default btn-secondary" data-toggle="tooltip" title="Download the UniProt IDs that are visible in the sunburst diagram" id="sunburst-download-ids">Prepare ID Download</button>
                                     <button type="button" class="normal btn btn-default btn-secondary mr-auto" data-toggle="tooltip" title="Download the FASTA sequences that are visible in the sunburst diagram" id="sunburst-download-fasta">Prepare FASTA Download</button>
-                                    <!--<button type="button" class="btn btn-default mr-auto" data-toggle="tooltip" title="Download a SVG file of the sunburst diagram" id="sunburst-svg">Download SVG</button>-->
+                                    <button type="button" class="normal btn btn-default btn-secondary mr-auto" data-toggle="tooltip" title="Download PNG of the sunburst diagram" id="sunburst-download-png">Download PNG</button>
+                                    <button type="button" class="normal btn btn-default btn-secondary mr-auto" data-toggle="tooltip" title="Download SVG of the sunburst diagram" id="sunburst-download-svg">Download SVG</button>
                                 </div>
                             </div>
                         </div>
@@ -520,5 +522,108 @@ AppSunburst.prototype.addSunburstDownloadDialogs = function() {
     this.container.append(block);
 };
 
+// Create an invisible download link and "click" it to trigger download
+//   getData: function, either createPNG or createSVG
+//   filename: what to set the link.download attribute to
+AppSunburst.prototype.downloadImage = function(getData, filename) {
+    console.log("downloadImage");
+    const downloadLink = document.createElement('a')
+    downloadLink.href = getData();
+    downloadLink.download = filename;
+    downloadLink.click();
+    downloadLink.remove();
+}
 
+// Connect buttons for image download to downloadImage function
+AppSunburst.prototype.enableImageDownloadLinks = function() {
+    // create link for PNG - needs to be clicked twice to work for some reason
+    const pngDownloadButton = document.getElementById("sunburst-download-png");
+    pngDownloadButton.onclick = this.downloadImage.bind(this, this.createPNG.bind(this), "taxonomy.png");
 
+    // create link for SVG
+    const svgDownloadButton = document.getElementById("sunburst-download-svg");
+    svgDownloadButton.onclick = this.downloadImage.bind(this, this.createSVG.bind(this), "taxonomy.svg");
+
+}
+
+// adjust some metadata & styling on a copy of the SVG before preparing for download
+AppSunburst.prototype.fixSVG = function() {
+    // The SVG created by the sunburst.js library uses some outdated attributes.
+    // this function updates them, but also crucially adds a <style> section which
+    // helps render the text properly. The stylesheet included here was pulled out
+    // of the minified version of the library at 
+    // https://github.com/EnzymeFunctionInitiative/sunburst/blob/main/web/js/sunburst-chart.min.js
+    //
+    // This is a hacky solution and it would be better to fix the library to properly include
+    // the stylesheet
+    const svgDoc = $("#sunburst-chart svg")[0];
+    const svg = svgDoc.cloneNode(true);
+    svg.removeAttribute("style");
+    // svg.setAttribute("fill", "None");
+    svg.setAttribute("width", "600px");
+    svg.setAttribute("height", "600px");
+    // https://stackoverflow.com/a/27077840
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/xlink:href
+    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+
+    // add the missing stylesheet if it is not there
+    svgStyle = document.createElement("style");
+    svgStyle.innerHTML = 
+    `text {font-family: sans-serif;font-size: 12px;dominant-baseline: middle;text-anchor: middle;pointer-events: none;fill: #222;}.text-contour {fill: none;stroke: white;stroke-width: 5;stroke-linejoin: round;}.main-arc {stroke-width: 1px;}.hidden-arc {fill: none;}`;
+    svg.prepend(svgStyle)
+    return svg;
+}
+
+// convert SVG element into XML string
+AppSunburst.prototype.serializeSVG = function() {
+    console.log("serializeSVG");
+    // update some fields in the SVG definition to make it render correctly, see above
+    const svg = this.fixSVG();
+
+    // turns the embedded SVG object into a regular string
+    svgData = new XMLSerializer().serializeToString(svg);
+    // svgData = svgData.replace("xlink:href", "href");
+    return svgData;
+}
+
+// convert serialized SVG element from XML to data URL
+AppSunburst.prototype.createSVG = function() {
+    console.log("createSVG");
+    // base64 encodes serialized version of SVG and prepends a header so that
+    // browswers know what to do with it
+
+    // Data header for a svg image: 
+    const dataHeader = 'data:image/svg+xml;base64,';
+    const imgBase64 = dataHeader + btoa(this.serializeSVG());
+
+    return imgBase64;
+}
+
+// render a PNG of the diagram using a hidden HTML canvas element
+AppSunburst.prototype.createPNG = function() {
+    console.log("createPNG");
+    // uses an HTML canvas to convert the base64-encoded SVG into a PNG
+    // result is a base64 encoded string which browers know how to download 
+    // into an image file
+    const imgBase64 = this.createSVG();
+
+    // store in an img to supply to the canvas
+    const tempImg = new Image();
+    tempImg.src = imgBase64;
+
+    // use an html canvas to convert base64 encoded svg to PNG
+    const svg = $("#sunburst-chart svg")[0];
+    const canvas = document.createElement('canvas');
+    canvas.width = svg.clientWidth;
+    canvas.height = svg.clientHeight;
+    ctx = canvas.getContext('2d');
+    ctx.drawImage(tempImg, 0, 0, svg.clientWidth, svg.clientHeight);
+    console.log(ctx);
+    
+    // document.body.append(canvas);
+    const dataURL = canvas.toDataURL("image/png", 1)
+    tempImg.remove();
+    canvas.remove();
+
+    return dataURL
+};
