@@ -3,6 +3,8 @@
 // SUNBURST
 //
 
+var UI_BOOTSTRAP = 1;
+var UI_JQUERY = 2;
 
 
 //function AppSunburst(apiId, apiKey, apiExtra, appUniRefVersion, scriptApp, hasUniRef = false) {
@@ -17,6 +19,7 @@ function AppSunburst(params) {
     this.hasUniRef             =    typeof params.hasUniRef === "boolean"               ? params.hasUniRef : false;
     this.scriptApp             =    typeof params.scriptApp === "string"                ? params.scriptApp : "";
     this.fastaApp              =    typeof params.fastaApp === "string"                 ? params.fastaApp : "";
+    this.uiApi                 =    typeof params.useBootstrap === "boolean"            ? (params.useBootstrap ? UI_BOOTSTRAP : UI_JQUERY) : UI_JQUERY;
 }
 
 
@@ -194,21 +197,25 @@ AppSunburst.prototype.addSunburstFeature = function(treeData) {
 };
 AppSunburst.prototype.getDownloadWarningFn = function() {
     var that = this;
-    $("#sunburst-fasta-download").dialog({
-        resizeable: false,
-        height: "auto",
-        width: 400,
-        modal: true,
-        buttons: {
-            "Continue": function() {
-                that.sunburstDownloadFasta();
-                $(this).dialog("close");
-            },
-            Cancel: function() {
-                $(this).dialog("close");
+    if (this.uiApi == UI_BOOTSTRAP) {
+        $("#sunburst-fasta-download").modal('show');
+    } else {
+        $("#sunburst-fasta-download").dialog({
+            resizeable: false,
+            height: "auto",
+            width: 400,
+            modal: true,
+            buttons: {
+                "Continue": function() {
+                    that.sunburstDownloadFasta();
+                    $(this).dialog("close");
+                },
+                Cancel: function() {
+                    $(this).dialog("close");
+                }
             }
-        }
-    });
+        });
+    }
 };
 function fixNodeName(str) {
     return str.replace(/[^a-z0-9]/gi, "_");
@@ -424,23 +431,60 @@ function base64ToBlob(base64, mimetype, slicesize) {
 AppSunburst.prototype.attachToContainer = function(containerId) {
     this.container = $("#"+containerId);
 
-    this.addSunburstDownloadWarning();
     this.addSunburstContainer();
     this.addSunburstDownloadDialogs();
     this.enableImageDownloadLinks();
+
+    if (this.uiApi == UI_BOOTSTRAP) {
+        var block = this.getSunburstDownloadWarningBootstrap();
+        this.container.append(block);
+        var that = this;
+        $('#sunburst-download-fasta-btn').click(function(e) {
+            that.sunburstDownloadFasta();
+            $("#sunburst-fasta-download").modal("hide");
+        });
+    } else {
+        var block = this.getSunburstDownloadWarningJQueryUI();
+        this.container.append(block);
+    }
 };
 
 
-AppSunburst.prototype.addSunburstDownloadWarning = function() {
+AppSunburst.prototype.getSunburstDownloadWarningBootstrap = function() {
     var block = `
-        <div id="sunburst-fasta-download" title="Download Warning" style="display: none">
-            <p>
-                <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 50px 0;"></span>
-                This download may take a long time.
-            </p>
+    <div id="sunburst-fasta-download" class="modal fade" tabindex="-1" role="dialog" style="margin-top: 200px;">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Download FASTA</h5>
+                </div>
+                <div class="modal-body">
+                    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 50px 0;"></span>
+                    This download may take a long time.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="sunburst-download-fasta-btn" data-dismiss="modal" data-action="download">Download</button><br><br>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
+        <div id="downloadProgressLoader" class="progress-loader progress-loader-sm" style="display: none">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    </div>
     `;
-    this.container.append(block);
+    return block;
+}
+AppSunburst.prototype.getSunburstDownloadWarningJQueryUI = function() {
+    var block = `
+    <div id="sunburst-fasta-download" title="Download Warning" style="display: none">
+        <p>
+            <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 50px 0;"></span>
+            This download may take a long time.
+        </p>
+    </div>
+    `;
+    return block;
 }
 
 
